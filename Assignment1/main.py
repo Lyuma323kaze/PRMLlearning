@@ -6,9 +6,11 @@ from weak_classifiers import linear_clsfer_fisher as linear
 from weak_classifiers import tree_clsfer as tree
 from LASSO import lasso_regression as lasso
 
+np.random.seed(100)
+
 # splitting
-def train_test_split(data, train_size=None, test_size=None):
-    n_samples = data.shape[0]
+def train_test_split(_data, train_size=None, test_size=None):
+    n_samples = _data.shape[0]
     test_num = int(test_size * n_samples)
     train_num = int(train_size * n_samples)
     # 生成随机索引并分割
@@ -17,8 +19,8 @@ def train_test_split(data, train_size=None, test_size=None):
     train_indices = indices[test_num: test_num + train_num]
 
     # 分离数据
-    data_train = data[train_indices]
-    data_test = data[test_indices]
+    data_train = _data[train_indices]
+    data_test = _data[test_indices]
 
     return data_train, data_test
 
@@ -65,10 +67,10 @@ def det_main_feature(X, y, number = 4, alpha = 1e-5, epsilon = 1e-1, C = 0.5, ma
     return sorted_indices   # the 4 main features ordered by the values going down
 
 # do gradient boosting
-def gradient_boost(data_train, loss_tuple, iterations, weak_clasfers):
+def gradient_boost(_data_train, loss_tuple, iterations, weak_clasfers):
     m = iterations
-    X = data_train[:, :-1]
-    y = data_train[:, -1]
+    X_train = _data_train[:, :-1]
+    y_train = _data_train[:, -1]
     # containers
     r_ls = []
     para = []
@@ -78,17 +80,18 @@ def gradient_boost(data_train, loss_tuple, iterations, weak_clasfers):
     f0 = lambda x: 0
     gradient = loss_tuple[1]
     f = f0
+    y_trainn = y_train.copy()
     # iteration
     for k in range(m):
-        r = - gradient(X, y, f)
+        r = - gradient(X_train, y_train, f)
         r_ls.append(r)
 
         h = h_ls[k % 2]        # odd by tree, even by linear
-        training_data = np.column_stack((X, r))
-        paramter = h(data_train = training_data, compute = False)     # return para
+        training_data = np.column_stack((X_train, r))
+        paramter = h(_data_train = training_data, compute = False)     # return para
         para.append(paramter)
 
-        gamma = min_gamma(X, y, f, h, para = paramter)       # return gamma
+        gamma = min_gamma(X_train, y_trainn, f, h, para = paramter)  # return gamma
         gamma_ls.append(gamma)
 
         def new_f(X):

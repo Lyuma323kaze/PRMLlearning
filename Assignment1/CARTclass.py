@@ -1,7 +1,5 @@
-from math import log10
 from collections import Counter
 import numpy as np
-from skimage.filters.rank import threshold
 
 
 class CARTDecisionTree:
@@ -123,6 +121,7 @@ class CARTDecisionTree:
                 return self._predict_sample(data_x, node.children[1])
 
     def compute_accuracy(self, X, y):
+        # print(f'y unused: {y}')
         prediction = self.predict(X)
         if y is not None:
             mask = np.array(prediction == y)

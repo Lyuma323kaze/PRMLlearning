@@ -124,9 +124,12 @@ class CARTDecisionTree:
 
     def compute_accuracy(self, X, y):
         prediction = self.predict(X)
-        mask = np.array(prediction == y)
-        accuracy = mask.astype(int).mean()
-        return accuracy, mask, prediction
+        if y is not None:
+            mask = np.array(prediction == y)
+            accuracy = mask.astype(int).mean()
+            return accuracy, mask, prediction
+        else:
+            return None, None, prediction
 
     def predict(self, data_X):
         return np.array([self._predict_sample(data_x, self.tree) for data_x in data_X])

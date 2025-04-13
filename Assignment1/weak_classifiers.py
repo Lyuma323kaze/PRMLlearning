@@ -1,8 +1,9 @@
 import numpy as np
 from CARTclass import CARTDecisionTree
 
-def linear_clsfer_fisher(data_test,
+def linear_clsfer_fisher(X_test = None,
                          data_train = None,
+                         y_test = None,
                          train_size=0.7,
                          test_size=0.3,
                          compute = True,
@@ -22,14 +23,17 @@ def linear_clsfer_fisher(data_test,
         threshold = (np.mean(X0 @ w1) + np.mean(X1 @ w1)) / 2
         return w1, threshold
 
-    def fisher_test(data_test, threshold, w_star):
-        X = data_test[:, :-1]
-        y = data_test[:, -1]
+    def fisher_test(X_test, threshold, w_star, label = None):
+        X = X_test
+        y = label
         projection = X @ w_star
         prediction = np.array(projection > threshold).astype(int)
-        mask = (prediction == y)
-        accuracy = np.mean(prediction == y)
-        return accuracy, mask, prediction
+        if y is not None:
+            mask = (prediction == y)
+            accuracy = np.mean(prediction == y)
+            return accuracy, mask, prediction
+        else:
+            return None, None, prediction
 
     if para is None:
         if data_train is None:
@@ -39,16 +43,17 @@ def linear_clsfer_fisher(data_test,
         w_star, threshold = para
 
     if predict:
-        return fisher_test(data_test, threshold, w_star)[2]
+        return fisher_test(X_test, threshold, w_star)[2]
 
     if compute:
-        accuracy, mask, prediction = fisher_test(data_test, threshold, w_star)
+        accuracy, mask, prediction = fisher_test(X_test, threshold, w_star, label = y_test)
         return accuracy, mask
     else:
         return w_star, threshold
 
-def tree_clsfer(data_test,
+def tree_clsfer(X_test = None,
                 data_train = None,
+                y_test = None,
                 para = None,
                 train_size=0.7,
                 test_size=0.3,
@@ -64,10 +69,10 @@ def tree_clsfer(data_test,
             toy = para
 
         if predict:
-            return toy.compute_accuracy(data_test[:, :-1], data_test[:, -1])[2]
+            return toy.compute_accuracy(X_test, y_test)[2]
 
         if compute:
-            acc, mask, prediction = toy.compute_accuracy(data_test[:, :-1], data_test[:, -1])
+            acc, mask, prediction = toy.compute_accuracy(X_test, y_test)
             return acc, mask
         else:
             return toy

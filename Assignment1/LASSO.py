@@ -71,6 +71,4 @@ w_linear = linear_regression(data_X, data_y, alpha, epsilon, max_iter)
 w_lasso = lasso_regression(data_X, data_y, alpha, epsilon, 0.1, max_iter)
 
 np.set_printoptions(suppress= True, precision = 4)
-print(f'w_linear = {w_linear}')
-print(f'w_lasso = {w_lasso}')
 

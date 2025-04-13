@@ -56,7 +56,7 @@ def lasso_regression(data_X, data_y, alpha, epsilon, C, max_iter = 1000):
     a = alpha
     e = epsilon
     # initialize w
-    w = np.ones(4)
+    w = np.ones(data_X.shape[1])
     grad = compute_gradient_SSE(data_X, data_y, w) + compute_gradient_norm1(C, w)
     for _ in range(max_iter):
         w_old = w.copy()

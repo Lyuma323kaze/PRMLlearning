@@ -2,11 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from itertools import combinations
-from weak_classifiers import linear_clsfer_fisher as linear
+from weak_classifiers import linear_fisher_kclass as linear
 from weak_classifiers import tree_clsfer as tree
 from LASSO import lasso_regression as lasso
 
-np.random.seed(100)
+np.random.seed(941)
 
 # splitting
 def train_test_split(_data, train_size=None, test_size=None):
@@ -35,7 +35,7 @@ def square(X, y, f: callable):
     return (y - f(X)) ** 2
 # gradient of square loss
 def compute_gradient_square(X, y, f: callable):
-    return 2 * (y - f(X))
+    return -2 * (y - f(X))
 
 # return accuracy
 def compute_accuracy(X, y, f: callable):
@@ -46,16 +46,16 @@ def compute_accuracy(X, y, f: callable):
 # return gamma
 def min_gamma(X, y, f: callable,
               h: callable,
-              ini_value = 0.1,
+              ini_value = 1e-3,
               max_iter = 50,
-              alpha = 0.05,
+              alpha = 0.5,
               para = None):
     gamma = ini_value
     for _ in range(max_iter):
-        def f_plus_h(X):
-            return f(X) + gamma * h(X, predict = True, para = para)
-        grad = compute_gradient_square(X, y, f_plus_h) * h(X, predict = True, para = para)
-        gamma -= alpha * grad.sum()
+        def f_plus_h(x):
+            return f(x) + gamma * h(X_test = x, predict = True, para = para)
+        grad = compute_gradient_square(X, y, f_plus_h) * h(X_test = X, predict = True, para = para)
+        gamma -= alpha * grad.mean()
     return gamma
 
 # determine main features, return 4 indices
@@ -77,7 +77,7 @@ def gradient_boost(_data_train, loss_tuple, iterations, weak_clasfers):
     h_ls = weak_clasfers
     gamma_ls = []
     # initialization
-    f0 = lambda x: 0
+    f0 = lambda x: np.zeros(len(x))
     gradient = loss_tuple[1]
     f = f0
     y_trainn = y_train.copy()
@@ -95,16 +95,16 @@ def gradient_boost(_data_train, loss_tuple, iterations, weak_clasfers):
         gamma_ls.append(gamma)
 
         def new_f(X):
-            value = f0(X)
+            value = 0
             paras = para.copy()
             gammas = gamma_ls.copy()
             for i in range(len(gammas)):
                 h = h_ls[i % 2]
-                value += gammas[i] * h(X_test=X, para=paras[i], predict=True)[2]
+                delta_value = gammas[i] * h(X_test=X, para=paras[i], predict=True)
+                value += delta_value
             return value
 
         f = new_f
-
     r_ls = np.array(r_ls)
     gamma_ls = np.array(gamma_ls)
     return f, r_ls, gamma_ls
@@ -178,11 +178,10 @@ loss_sqr = (square, compute_gradient_square)
 h_ls = [linear, tree]
 
 # iteration number M
-m = 5
+m = 10
 
 if __name__ == '__main__':
     f, r_ls, gamma_ls = gradient_boost(data_train, loss_sqr, m, h_ls)
-    # print(f(data_train))
     acc = compute_accuracy(data_test[:, :-1], data_test[:, -1], f)
     print(f'accuracy = {acc}')
     X, y = data[:, :-1], data[:, -1]

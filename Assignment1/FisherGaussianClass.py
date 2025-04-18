@@ -16,29 +16,12 @@ class FisherGaussianLDAClassifier:
         n_samples, n_features = X_train.shape
 
         # compute for each class
-        self.mean_vecs = [np.mean(X_train[y_train == cls], axis=0) for cls in self.classes_]
+        self.mean_vecs = np.array([np.mean(X_train[y_train == cls], axis=0) for cls in self.classes_])
         class_counts = [np.sum(y_train == cls) for cls in self.classes_]
+        global_mean = X_train.mean(axis=0)
 
-        # Sw
-        Sw = np.zeros((n_features, n_features))
-        for cls, mean_vec in zip(self.classes_, self.mean_vecs):
-            class_samples = X_train[y_train == cls]
-            Sw += (class_samples - mean_vec).T @ (class_samples - mean_vec)
-        Sw += 1e-6 * np.eye(n_features)  # regularization
-
-        # covariant matrix and inverse
-        Sigma = Sw / (n_samples - n_classes)
-        self.Sigma_inv = np.linalg.inv(Sigma)
-
-        # prior probabilities
-        priors = np.array(class_counts) / n_samples
-
-        # coefficient matrix (gaussian distribution assumption)
-        self.coefs_ = [self.Sigma_inv @ mean_vector for mean_vector in self.mean_vecs]
-        self.intercepts_ = [
-            -0.5 * mean_vector @ self.Sigma_inv @ mean_vector + np.log(prior)
-            for mean_vector, prior in zip(self.mean_vecs, priors)
-        ]
+        self.coefs_ = (self.mean_vecs - global_mean)
+        self.intercepts_ = -0.5 * np.diag(self.mean_vecs @ self.coefs_.T) + np.log(class_counts)
 
         return self
 

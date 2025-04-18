@@ -15,12 +15,12 @@ def train_test_split(_data, train_size=None, test_size=None):
     n_samples = _data.shape[0]
     test_num = int(test_size * n_samples)
     train_num = int(train_size * n_samples)
-    # 生成随机索引并分割
+    # generate random indices and split
     indices = np.random.permutation(n_samples)
     test_indices = indices[:test_num]
     train_indices = indices[test_num: test_num + train_num]
 
-    # 分离数据
+    # split data
     data_train = _data[train_indices]
     data_test = _data[test_indices]
 
@@ -173,7 +173,12 @@ def plot_main_features(X, main_features,
         contour = ax.contour(xx, yy, Z, levels=[threshold],
                    colors='k', linewidths=4, linestyles='solid')
         legend_lines = [
-            Line2D([0], [0], color='k', linewidth=4, linestyle='solid', label='f(X) = 0.5')  # 决策边界
+            Line2D([0],
+                   [0],
+                   color='k',
+                   linewidth=4,
+                   linestyle='solid',
+                   label='f(X) = 0.5')  # decision boundary
         ]
         ax.legend(handles=legend_lines, loc='upper left', fontsize=10, frameon=True)
         ax.set_xlabel(f'Feature {dim1}')
@@ -296,8 +301,8 @@ if __name__ == '__main__':
         f, r_ls, gamma_ls = gradient_boost(data_train, loss_sqr, m_fin, h_ls)
         gamma_tree = gamma_ls[[2*i for i in range(m_fin // 2)]]
         gamma_linear = gamma_ls[[2 * i + 1 for i in range(m_fin // 2)]]
-        # plot_gamma(gamma_tree, name = 'tree')
-        # plot_gamma(gamma_linear, name = 'linear')
+        plot_gamma(gamma_tree, name = 'tree')
+        plot_gamma(gamma_linear, name = 'linear')
         judge_r_var(r_ls)
 
 

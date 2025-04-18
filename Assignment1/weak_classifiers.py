@@ -1,6 +1,6 @@
 import numpy as np
 from CARTclass import CARTDecisionTree
-from FisherClass import FisherLDAClassifier
+from FisherGaussianClass import FisherGaussianLDAClassifier
 
 def linear_clsfer_fisher(X_test = None,
                          _data_train = None,
@@ -53,15 +53,15 @@ def linear_clsfer_fisher(X_test = None,
         return w_star, threshold
 
 
-def linear_fisher_kclass(X_test = None,
-                         _data_train = None,
-                         y_test = None,
-                         train_size=0.7,
-                         test_size=0.3,
-                         compute = True,
-                         para = None,
-                         predict = False):
-    toy = FisherLDAClassifier()
+def linear_fisher_gaussian_kclass(X_test = None,
+                                  _data_train = None,
+                                  y_test = None,
+                                  train_size=0.7,
+                                  test_size=0.3,
+                                  compute = True,
+                                  para = None,
+                                  predict = False):
+    toy = FisherGaussianLDAClassifier()
 
     if para is None:
         if _data_train is not None:

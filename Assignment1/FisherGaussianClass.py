@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class FisherLDAClassifier:
+class FisherGaussianLDAClassifier:
     def __init__(self):
         self.coefs_ = None  # coefficient matrix
         self.intercepts_ = None  # intercepts
@@ -45,12 +45,9 @@ class FisherLDAClassifier:
     def predict(self, X):
         if self.coefs_ is None:
             raise ValueError("Please fit the model first.")
-
-        # compute the classification scores
-        scores = np.array([X @ coef + intercept
-                           for coef, intercept in zip(self.coefs_, self.intercepts_)]).T
-
-        # return class with max score
+        coef_matrix = np.array(self.coefs_)  # (n_classes, n_features)
+        intercepts = np.array(self.intercepts_)  # (n_classes,)
+        scores = X @ coef_matrix.T + intercepts  # (n_samples, n_classes)
         return self.classes_[np.argmax(scores, axis=1)]
 
     def compute_accuracy(self, X_test, y_test):

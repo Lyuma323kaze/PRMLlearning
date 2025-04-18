@@ -2,11 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from itertools import combinations
-from weak_classifiers import linear_fisher_kclass as linear
+from weak_classifiers import linear_fisher_gaussian_kclass as linear
 from weak_classifiers import tree_clsfer as tree
-from LASSO import lasso_regression as lasso
+from sklearn.linear_model import Lasso
+import pandas as pd
 
-np.random.seed(941)
+np.random.seed(114)
 
 # splitting
 def train_test_split(_data, train_size=None, test_size=None):
@@ -38,8 +39,9 @@ def compute_gradient_square(X, y, f: callable):
     return -2 * (y - f(X))
 
 # return accuracy
-def compute_accuracy(X, y, f: callable):
-    mask = np.array(f(X) == y)
+def compute_accuracy(X, y, f: callable, threshold = 0.5):
+    difference = np.abs(y - f(X))
+    mask = difference <= threshold
     accr = mask.astype(int).mean()
     return accr
 
@@ -48,7 +50,7 @@ def min_gamma(X, y, f: callable,
               h: callable,
               ini_value = 1e-3,
               max_iter = 50,
-              alpha = 0.5,
+              alpha = 0.05,
               para = None):
     gamma = ini_value
     for _ in range(max_iter):
@@ -60,7 +62,9 @@ def min_gamma(X, y, f: callable,
 
 # determine main features, return 4 indices
 def det_main_feature(X, y, number = 4, alpha = 1e-5, epsilon = 1e-1, C = 0.5, max_iter = 1000):
-    w = lasso(X, y, alpha = alpha, epsilon = epsilon, C = C, max_iter = max_iter)
+    lasso_obj = Lasso(alpha = 0.1)
+    lasso_obj.fit(X, y)
+    w = lasso_obj.coef_
     w = np.abs(w)
     indices = np.argpartition(w, -number)[-number:]
     sorted_indices = indices[np.argsort(-w[indices])]
@@ -160,32 +164,36 @@ def plot_main_features(X, y, main_features, f: callable, threshold = 0.5, name =
         plt.close()
 
 
-# import data from txt
-data_ini = np.genfromtxt('breast-cancer-wisconsin.txt', missing_values = '?', filling_values = np.nan)
-data = data_ini[~np.isnan(data_ini).any(axis = 1)]
-data = data[:, 1:]  # to be refined for the WDBC set
+# import data from csv
+df = pd.read_csv("WDBC.csv")
+data = df.iloc[:, 2:-1].values
+labels = df["diagnosis"]
+labels = labels.map({'M': 1, 'B': 0}).values
+labels = labels.reshape(-1, 1)
+data = np.hstack([data, labels])
 
 # import data from csv (to be done)
 
 
 # training set and test set
-data_train, data_test = train_test_split(data, train_size=0.8, test_size=0.2)
+data_train, data_test = train_test_split(data, train_size=0.7, test_size=0.3)
 
 # loss function and gradient tuple
 loss_sqr = (square, compute_gradient_square)
 
 # weak classifiers
-h_ls = [linear, tree]
+h_ls = [tree, linear]
 
 # iteration number M
-m = 10
+m_ls = np.arange(1, 10)
 
 if __name__ == '__main__':
-    f, r_ls, gamma_ls = gradient_boost(data_train, loss_sqr, m, h_ls)
-    acc = compute_accuracy(data_test[:, :-1], data_test[:, -1], f)
-    print(f'accuracy = {acc}')
+    for m in m_ls:
+        f, r_ls, gamma_ls = gradient_boost(data_train, loss_sqr, m, h_ls)
+        acc = compute_accuracy(data_test[:, :-1], data_test[:, -1], f)
+        print(f'm = {m}, accuracy = {acc}')
     X, y = data[:, :-1], data[:, -1]
     main_feature_indices = det_main_feature(X, y, number = 3)   # 3 main indices
-    # plot_main_features(X, y, main_feature_indices, f = f, threshold = 0.5)     # plot decision boundary
+    # plot_main_features(data_test[:, :-1], data_test[:, -1], main_feature_indices, f = f, threshold = 0.5)     # plot decision boundary
 
 

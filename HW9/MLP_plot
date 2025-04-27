@@ -1,0 +1,41 @@
+digraph {
+	x [label=x]
+	W0 [label=W0]
+	b0 [label=b0]
+	W1 [label=W1]
+	b1 [label=b1]
+	W2 [label=W2]
+	b2 [label=b2]
+	mul0 [label="×" shape=circle]
+	mul1 [label="×" shape=circle]
+	mul2 [label="×" shape=circle]
+	add0 [label="+" shape=circle]
+	add1 [label="+" shape=circle]
+	add2 [label="+" shape=circle]
+	z1 [label=z1]
+	z2 [label=z2]
+	fx [label="f(x)"]
+	relu1 [label=ReLU1 shape=circle]
+	relu2 [label=ReLU2 shape=circle]
+	a1 [label=a1]
+	a2 [label=a2]
+	x -> mul0
+	W0 -> mul0
+	mul0 -> add0
+	b0 -> add0
+	add0 -> z1
+	z1 -> relu1
+	relu1 -> a1
+	a1 -> mul1
+	W1 -> mul1
+	mul1 -> add1
+	b1 -> add1
+	add1 -> z2
+	z2 -> relu2
+	relu2 -> a2
+	a2 -> mul2
+	W2 -> mul2
+	mul2 -> add2
+	b2 -> add2
+	add2 -> fx
+}

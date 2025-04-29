@@ -5,6 +5,7 @@ dot = Digraph()
 
 # 添加节点
 dot.node('x', 'x')              # 输入 x
+dot.node('y', 'y')
 dot.node('W0', 'W0')              # 权重 W
 dot.node('b0', 'b0')              # 偏置 b
 dot.node('W1', 'W1')
@@ -19,11 +20,12 @@ dot.node('add1', '+', shape='circle')
 dot.node('add2', '+', shape='circle')
 dot.node('z1', 'z1')              # 中间变量 z
 dot.node('z2', 'z2')
-dot.node('fx', 'f(x)')
 dot.node('relu1', 'ReLU1', shape='circle')# ReLU 激活函数
 dot.node('relu2', 'ReLU2', shape='circle')
 dot.node('a1', 'a1')              # 输出 y
 dot.node('a2', 'a2')
+dot.node('L2', 'L2', shape = 'circle')
+dot.node('J', 'J')
 # 添加边（箭头）
 dot.edge('x', 'mul0')            # x 到乘法节点
 dot.edge('W0', 'mul0')            # W 到乘法节点
@@ -46,6 +48,10 @@ dot.edge('W2', 'mul2')
 dot.edge('mul2', 'add2')
 dot.edge('b2', 'add2')
 dot.edge('add2', 'fx')
+
+dot.edge('fx', 'L2')
+dot.edge('y', 'L2')
+dot.edge('L2', 'J')
 
 # 渲染并保存图表
 dot.render('MLP_plot', format='png', view=True)

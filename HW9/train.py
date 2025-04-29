@@ -50,22 +50,25 @@ def compute_gradient_definition(x, y, W0, W1, W2, b0, b1, b2, delta=1e-5):
 
 # Define the function for students to implement back-propagation
 def compute_gradient(x, y, W0, W1, W2, b0, b1, b2, a1, a2):
-    w_ls = [W0, W1, W2]
-    b_ls = [b0, b1, b2]
-    a_ls = [x, a1, a2]
-    grads = np.empty((len(w_ls), 2))    # grad_w, grad_b for each line
-    z_grads = np.empty(4)
-    y_hat, _, _ = forward(x, W0, W1, W2, b0, b1, b2)
-    grad_y_hat = y_hat - y
-    z_grads[-1] = grad_y_hat
-    for idx_ in range(len(w_ls)):
-        idx = - idx_ - 1
-        grads[idx, 0] = a_ls[idx] @ z_grads[idx]    # grad_w
-        grad_a = w_ls[idx].T @ z_grads[idx]  # grad_a
-        grads[idx, 1] = z_grads[idx] # grad_b
-        z_local = np.dot(a_ls[idx], w_ls[idx]) + b_ls[idx]
-        z_grads[idx - 1] = relu_derivative(z_local) @ grad_a
-    return grads[0, 0], grads[1, 0], grads[2, 0], grads[0, 1], grads[1, 1], grads[2, 1]
+    y_hat = np.dot(a2, W2) + b2
+
+    dLoss_dyhat = y_hat - y
+
+    dW2 = np.dot(a2.T, dLoss_dyhat) / x.shape[0]
+    db2 = np.mean(dLoss_dyhat, axis=0)
+
+    dLoss_da2 = np.dot(dLoss_dyhat, W2.T) * relu_derivative(a2)
+
+    dW1 = np.dot(a1.T, dLoss_da2) / x.shape[0]
+    db1 = np.mean(dLoss_da2, axis=0)
+
+    dLoss_da1 = np.dot(dLoss_da2, W1.T) * relu_derivative(a1)
+
+    dW0 = np.dot(x.T, dLoss_da1) / x.shape[0]
+    db0 = np.mean(dLoss_da1, axis=0)
+    # print('the shapes are as below')
+    # print(dW0.shape, dW1.shape, dW2.shape, db0.shape, db1.shape, db2.shape)
+    return dW0, dW1, dW2, db0, db1, db2
 
 # Dataset generation function
 def generate_dataset(num_samples, input_dim):

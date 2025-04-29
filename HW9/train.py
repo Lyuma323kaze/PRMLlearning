@@ -52,23 +52,23 @@ def compute_gradient_definition(x, y, W0, W1, W2, b0, b1, b2, delta=1e-5):
 def compute_gradient(x, y, W0, W1, W2, b0, b1, b2, a1, a2):
     y_hat = np.dot(a2, W2) + b2
 
-    dLoss_dyhat = y_hat - y
+    grad_yhat = y_hat - y
 
-    dW2 = np.dot(a2.T, dLoss_dyhat) / x.shape[0]
-    db2 = np.mean(dLoss_dyhat, axis=0)
+    grad_w2 = np.dot(a2.T, grad_yhat) / x.shape[0]
+    grad_b2 = np.mean(grad_yhat, axis=0)
 
-    dLoss_da2 = np.dot(dLoss_dyhat, W2.T) * relu_derivative(a2)
+    grad_a2 = np.dot(grad_yhat, W2.T) * relu_derivative(a2)
 
-    dW1 = np.dot(a1.T, dLoss_da2) / x.shape[0]
-    db1 = np.mean(dLoss_da2, axis=0)
+    grad_w1 = np.dot(a1.T, grad_a2) / x.shape[0]
+    grad_b1 = np.mean(grad_a2, axis=0)
 
-    dLoss_da1 = np.dot(dLoss_da2, W1.T) * relu_derivative(a1)
+    grad_a1 = np.dot(grad_a2, W1.T) * relu_derivative(a1)
 
-    dW0 = np.dot(x.T, dLoss_da1) / x.shape[0]
-    db0 = np.mean(dLoss_da1, axis=0)
+    grad_w0 = np.dot(x.T, grad_a1) / x.shape[0]
+    grad_b0 = np.mean(grad_a1, axis=0)
     # print('the shapes are as below')
-    # print(dW0.shape, dW1.shape, dW2.shape, db0.shape, db1.shape, db2.shape)
-    return dW0, dW1, dW2, db0, db1, db2
+    # print(grad_w0.shape, grad_w1.shape, grad_w2.shape, grad_b0.shape, grad_b1.shape, grad_b2.shape)
+    return grad_w0, grad_w1, grad_w2, grad_b0, grad_b1, grad_b2
 
 # Dataset generation function
 def generate_dataset(num_samples, input_dim):

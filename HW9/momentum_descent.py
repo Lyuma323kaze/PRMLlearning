@@ -32,43 +32,42 @@ def gradient_descent(x0, eta, iterations, m = 0.):
 
 eta = 0.02
 m = 0.9
-iter = 20
+iter = 100
 lim = 0.01
 
 np.random.seed(941)
 x0 = np.random.uniform(low = -lim, high = lim, size = 2)
-print(x0)
+print(f'x0 = {x0}')
 
 x_simple, loss_simple = gradient_descent(x0, eta, iter)
 x_momentum, loss_momentum = gradient_descent(x0, eta, iter, m)
 
-color_range = np.arange(len(x_simple))
+print(f'x_simple: {x_simple[-1]}')
+print(f'x_momentum: {x_momentum[-1]}')
 
+
+color_range = np.arange(len(x_simple))
 
 def plot_trajectory_with_color(ax, trajectory, title):
     n_points = len(trajectory)
     colors = color_range
 
-    # 绘制散点图（颜色表示迭代顺序）
     sc = ax.scatter(
         trajectory[:, 0],
         trajectory[:, 1],
         c=colors,
-        cmap='viridis',  # 选择颜色映射
+        cmap='coolwarm',
         s=20,  # 点的大小
         edgecolor='none'
     )
 
-    # 添加颜色条
     cbar = plt.colorbar(sc, ax=ax)
     cbar.set_label('Iteration')
 
-    # 添加标题和标签
     ax.set_title(title)
     ax.set_xlabel('x1')
     ax.set_ylabel('x2')
 
-    # 可选：添加箭头表示方向
     for i in range(1, n_points):
         ax.annotate('',
                     xy=trajectory[i],
@@ -77,40 +76,25 @@ def plot_trajectory_with_color(ax, trajectory, title):
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
-# 绘制x_simple的轨迹
-plot_trajectory_with_color(ax1, x_simple, 'x_simple Trajectory')
 
-# 绘制x_momentum的轨迹
-plot_trajectory_with_color(ax2, x_momentum, 'x_momentum Trajectory')
+plot_trajectory_with_color(ax1, x_simple, f'x_simple Trajectory@eta = {eta}')
+
+plot_trajectory_with_color(ax2, x_momentum, f'x_momentum Trajectory@eta = {eta}')
 
 plt.tight_layout()
-plt.savefig('trajectory_comparison.png')
+plt.savefig(f'trajectory_comparison@eta = {eta}.png')
 plt.close()
 
-plt.figure()
-plt.plot(x_simple[:, 0], x_simple[:, 1])
-plt.title('x_simple')
-plt.xlabel('x1')
-plt.ylabel('x2')
-plt.savefig('x_simple.png')
 
-plt.figure()
-plt.plot(x_momentum[:, 0], x_momentum[:, 1])
-plt.title('x_momentum')
-plt.xlabel('x1')
-plt.ylabel('x2')
-plt.savefig('x_momentum.png')
+plt.plot(loss_simple, 'b-o', markersize=4, label='Simple descent')
+plt.plot(loss_momentum, 'r-s', markersize=4, label='Momentum descent')
 
-plt.figure()
-plt.plot(loss_simple)
-plt.title('loss_simple')
-plt.xlabel('iteration')
-plt.ylabel('loss')
-plt.savefig('loss_simple.png')
+plt.yscale('log')
+plt.title(f'Loss Comparison@eta = {eta}')
+plt.xlabel('Iteration')
+plt.ylabel('Loss (log scale)')
+plt.grid(True, which="both", ls='-')
+plt.legend()
 
-plt.figure()
-plt.plot(loss_momentum)
-plt.title('loss_momentum')
-plt.xlabel('iteration')
-plt.ylabel('loss')
-plt.savefig('loss_momentum.png')
+plt.savefig(f'loss_comparison@eta = {eta}.png', bbox_inches='tight')
+plt.close()

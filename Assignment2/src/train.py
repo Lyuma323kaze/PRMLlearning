@@ -50,12 +50,22 @@ batch_size = {'train': train_batch_size,'valid':eval_batch_size}
 data_loader = data.Corpus("../data/ptb", batch_size, args.max_sql)
 
 ########################################
-# Build LMModel model (bulid your language model here)
+# Build LMModel model (build your language model here)
 # transformer
 model_transformer = model.LMModel_transformer(nvoc = len(data_loader.vocabulary), num_layers = args.num_layers,
                       dim = args.emb_dim, nhead = args.num_heads)
 model_transformer = model_transformer.to(device)
 optimizer_transformer = optim.Adam(model_transformer.parameters(), lr=1e-3)
+# RNN
+model_RNN = model.LMModel_RNN(nvoc = len(data_loader.vocabulary), dim = args.emb_dim,
+                              num_layers = args.num_layers)
+model_RNN = model_RNN.to(device)
+optimizer_RNN = optim.Adam(model_RNN.parameters(), lr=1e-3)
+# LSTM
+model_LSTM = model.LMModel_LSTM(nvoc = args.emb_dim, dim = args.emb_dim,
+                              num_layers = args.num_layers)
+model_LSTM = model_LSTM.to(device)
+optimizer_LSTM = optim.Adam(model_LSTM.parameters(), lr=1e-3)
 
 criterion = nn.CrossEntropyLoss()
 
@@ -111,13 +121,31 @@ def train(model_):
 
 
 # Loop over epochs for transformer
-train_perplexity = []
-valid_perplexity = []
+train_perplexity_transformer = []
+valid_perplexity_transformer = []
+train_perplexity_RNN = []
+valid_perplexity_RNN = []
+train_perplexity_LSTM = []
+valid_perplexity_LSTM = []
 for epoch in range(1, args.epochs+1):
-    print(f"Start training epoch {epoch}")
-    train_perplexity.append(train(model_transformer))
-    valid_perplexity.append(evaluate(model_transformer))
+    print(f"Start training epoch (transformer) {epoch}")
+    train_perplexity_transformer.append(train(model_transformer))
+    valid_perplexity_transformer.append(evaluate(model_transformer))
 
-print(f"Train Perpelexity {train_perplexity}")
-print(f"Valid Perpelexity {valid_perplexity}")
+for epoch in range(1, args.epochs+1):
+    print(f"Start training epoch (RNN) {epoch}")
+    train_perplexity_RNN.append(train(model_RNN))
+    valid_perplexity_RNN.append(evaluate(model_RNN))
+
+for epoch in range(1, args.epochs+1):
+    print(f"Start training epoch (LSTM) {epoch}")
+    train_perplexity_LSTM.append(train(model_LSTM))
+    valid_perplexity_LSTM.append(evaluate(model_LSTM))
+
+print(f"Train Perplexity transformer {train_perplexity_transformer}")
+print(f"Valid Perplexity transformer {valid_perplexity_transformer}")
+print(f'Train Perplexity RNN {train_perplexity_RNN}')
+print(f'Valid Perplexity RNN {valid_perplexity_RNN}')
+print(f'Train Perplexity LSTM {train_perplexity_LSTM}')
+print(f'Valid Perplexity LSTM {valid_perplexity_LSTM}')
 

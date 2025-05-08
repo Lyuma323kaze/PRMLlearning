@@ -38,9 +38,6 @@ class LMModel_transformer(nn.Module):
         L = embeddings.size(0)
         src_mask = torch.triu(torch.ones(L, L) * float('-inf'), diagonal=1).to(input.device.type)
         src = embeddings * math.sqrt(self.dim)
-        #TODO: use your defined transformer, and use the mask.
-        
-
         output, hidden = self.transformer(src, embeddings, src_mask)
         ########################################
         output = self.drop(output)
@@ -76,7 +73,6 @@ class LMModel_RNN(nn.Module):
         embeddings = self.drop(self.encoder(input))  # (seq_len, batch, dim)
 
         ########################################
-        # TODO: use your defined RNN network
         output, hidden = self.rnn(embeddings, hidden)
         ########################################
 

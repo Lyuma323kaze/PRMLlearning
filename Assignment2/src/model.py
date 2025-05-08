@@ -1,7 +1,10 @@
 import math
 import torch
 import torch.nn as nn
+import os
 
+os.environ["TORCH_USE_CUDA_DSA"] = "1"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 class LMModel_transformer(nn.Module):
     # Language model is composed of three parts: a word embedding layer, a rnn network and a output layer.
@@ -12,6 +15,7 @@ class LMModel_transformer(nn.Module):
         super(LMModel_transformer, self).__init__()
         self.drop = nn.Dropout(0.5)
         self.encoder = nn.Embedding(nvoc, dim)
+        self.dim = dim
         # WRITE CODE HERE witnin two '#' bar
         ########################################
         # Construct you Transformer model here. You can add additional parameters to the function.
@@ -103,7 +107,9 @@ class LMModel_LSTM(nn.Module):
 
         # structure of the network
         self.cellScale = hidden_size
+        self.hidden_size = hidden_size
         self.numlayers = num_layers
+        # gates
         # forget gate
         self.wf = nn.Linear(hidden_size, self.cellScale, bias = True)
         self.uf = nn.Linear(dim, self.cellScale)
@@ -136,6 +142,7 @@ class LMModel_LSTM(nn.Module):
         # TODO: use your defined LSTM network
         # initialize cell and hidden
         if hidden is None:
+            # 1-based layers, with layer==0 the initial
             h_tot = torch.zeros(self.numlayers, batch_size, self.hidden_size, device=input.device)
             c_tot = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             hidden = (h_tot, c_tot)
@@ -143,34 +150,35 @@ class LMModel_LSTM(nn.Module):
             h_tot, c_tot = hidden
 
         # loop
-        output = []
         for t in range(seq_len):
             x_t = embeddings[t, :, :]
+            f_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
+            i_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
+            o_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
+            c_ncont = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             for layer in range(self.numlayers):
-                if layer != 0:
-                    h_prev = h_tot[layer]
-                    c_prev = c_tot[layer]
-                else:
-                    h_prev = torch.zeros_like(h_tot[layer], device=input.device)
-                    c_prev = torch.zeros_like(c_tot[layer], device=input.device)
+                # h and c of last step
+                h_prev = h_tot[layer]
+                c_prev = c_tot[layer]
 
                 # forget gate
-                f_t = torch.sigmoid(self.wf(h_prev) + self.uf(x_t))
+                f_t[layer] = torch.sigmoid(self.wf(h_prev) + self.uf(x_t))
                 # input gate
-                i_t = torch.sigmoid(self.wi(h_prev) + self.ui(x_t))
+                i_t[layer] = torch.sigmoid(self.wi(h_prev) + self.ui(x_t))
+                # output gate
+                o_t[layer] = torch.sigmoid(self.wo(h_prev) + self.uo(x_t))
                 # new cell content
-                c_ncont = torch.tanh(self.wc(h_prev) + self.uc(x_t))
+                c_ncont[layer] = torch.tanh(self.wc(h_prev) + self.uc(x_t))
                 # update cell
                 c_tot[layer] = f_t * c_prev + i_t * c_ncont
-                # output gate
-                o_t = torch.sigmoid(self.wo(h_prev) + self.uo(x_t))
                 # update hidden
                 h_tot[layer] = o_t * torch.tanh(c_tot[layer])
-                x_t = h_tot[layer]  # update x
+                # to next layer
+                x_t = h_tot[layer]
 
 
         ########################################
-
+        output = self.decoder(h_tot)
         # Output has the dimension of
         # sequence_length * batch_size * number of classes
         output = self.drop(output)

@@ -5,11 +5,16 @@ import math
 import torch
 import torch.optim as optim
 import torch.nn as nn
+from torch import export
 
 import data
 import model
 import os
 import os.path as osp
+
+os.environ["TORCH_USE_CUDA_DSA"] = "1"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+
 
 parser = argparse.ArgumentParser(description='PyTorch ptb Language Model')
 parser.add_argument('--epochs', type=int, default=40,
@@ -137,7 +142,7 @@ def see_epoch(model_, train_ls, valid_ls, name:str = None):
     print(f"Valid Perplexity {name} {valid_ls}")
 
 
-see_epoch(model_RNN, train_perplexity_RNN, valid_perplexity_RNN, "RNN")
-see_epoch(model_transformer, train_perplexity_transformer, valid_perplexity_transformer, "transformer")
+# see_epoch(model_RNN, train_perplexity_RNN, valid_perplexity_RNN, "RNN")
+# see_epoch(model_transformer, train_perplexity_transformer, valid_perplexity_transformer, "transformer")
 see_epoch(model_LSTM, train_perplexity_LSTM, valid_perplexity_LSTM, "LSTM")
 

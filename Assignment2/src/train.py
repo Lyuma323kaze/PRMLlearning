@@ -51,10 +51,11 @@ data_loader = data.Corpus("../data/ptb", batch_size, args.max_sql)
 
 ########################################
 # Build LMModel model (bulid your language model here)
-model = model.LMModel_transformer(nvoc = len(data_loader.vocabulary), num_layers = args.num_layers,
+# transformer
+model_transformer = model.LMModel_transformer(nvoc = len(data_loader.vocabulary), num_layers = args.num_layers,
                       dim = args.emb_dim, nhead = args.num_heads)
-model = model.to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+model_transformer = model_transformer.to(device)
+optimizer_transformer = optim.Adam(model_transformer.parameters(), lr=1e-3)
 
 criterion = nn.CrossEntropyLoss()
 
@@ -62,10 +63,10 @@ criterion = nn.CrossEntropyLoss()
 # Calculate the average cross-entropy loss between the prediction and the ground truth word.
 # And then exp(average cross-entropy loss) is perplexity.
 
-def evaluate():
+def evaluate(model_):
     data_loader.set_valid()
     data, target, end_flag = data_loader.get_batch()
-    model.eval()
+    model_.eval()
     idx = 0
     avg_loss = 0
     print(f"Validating")
@@ -74,7 +75,7 @@ def evaluate():
             data, target, end_flag = data_loader.get_batch()
             data = data.to(device)
             target = target.to(device)
-            decode = model(data)
+            decode = model_(data)
 
             # Calculate cross-entropy loss
             loss = criterion(decode.view(decode.size(0) * decode.size(1), -1), target)
@@ -85,23 +86,23 @@ def evaluate():
 
 
 # Train Function
-def train():
+def train(model_):
     data_loader.set_train()
     data, target, end_flag = data_loader.get_batch()
-    model.train()
+    model_.train()
     idx = 0
     avg_loss = 0
     while not end_flag:
         data, target, end_flag = data_loader.get_batch()
         data = data.to(device)
         target = target.to(device)
-        decode = model(data)
+        decode = model_(data)
 
         # Calculate cross-entropy loss
-        optimizer.zero_grad()
+        optimizer_transformer.zero_grad()
         loss = criterion(decode.view(decode.size(0)*decode.size(1), -1), target)
         loss.backward()
-        optimizer.step()
+        optimizer_transformer.step()
         if (idx+1) % 50 == 0:
             print(f"The loss is {loss}")
         idx += 1
@@ -109,13 +110,13 @@ def train():
     return math.exp(avg_loss.item() / idx)
 
 
-# Loop over epochs.
+# Loop over epochs for transformer
 train_perplexity = []
 valid_perplexity = []
 for epoch in range(1, args.epochs+1):
     print(f"Start training epoch {epoch}")
-    train_perplexity.append(train())
-    valid_perplexity.append(evaluate())
+    train_perplexity.append(train(model_transformer))
+    valid_perplexity.append(evaluate(model_transformer))
 
 print(f"Train Perpelexity {train_perplexity}")
 print(f"Valid Perpelexity {valid_perplexity}")

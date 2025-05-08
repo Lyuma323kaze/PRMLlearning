@@ -127,25 +127,17 @@ train_perplexity_RNN = []
 valid_perplexity_RNN = []
 train_perplexity_LSTM = []
 valid_perplexity_LSTM = []
-for epoch in range(1, args.epochs+1):
-    print(f"Start training epoch (transformer) {epoch}")
-    train_perplexity_transformer.append(train(model_transformer))
-    valid_perplexity_transformer.append(evaluate(model_transformer))
 
-for epoch in range(1, args.epochs+1):
-    print(f"Start training epoch (RNN) {epoch}")
-    train_perplexity_RNN.append(train(model_RNN))
-    valid_perplexity_RNN.append(evaluate(model_RNN))
+def see_epoch(model_, train_ls, valid_ls, name:str = None):
+    for epoch in range(1, args.epochs + 1):
+        print(f"Start training epoch ({name}) {epoch}")
+        train_perplexity_transformer.append(train(model_))
+        valid_perplexity_transformer.append(evaluate(model_))
+    print(f"Train Perplexity {name} {train_ls}")
+    print(f"Valid Perplexity {name} {valid_ls}")
 
-for epoch in range(1, args.epochs+1):
-    print(f"Start training epoch (LSTM) {epoch}")
-    train_perplexity_LSTM.append(train(model_LSTM))
-    valid_perplexity_LSTM.append(evaluate(model_LSTM))
 
-print(f"Train Perplexity transformer {train_perplexity_transformer}")
-print(f"Valid Perplexity transformer {valid_perplexity_transformer}")
-print(f'Train Perplexity RNN {train_perplexity_RNN}')
-print(f'Valid Perplexity RNN {valid_perplexity_RNN}')
-print(f'Train Perplexity LSTM {train_perplexity_LSTM}')
-print(f'Valid Perplexity LSTM {valid_perplexity_LSTM}')
+see_epoch(model_RNN, train_perplexity_RNN, valid_perplexity_RNN, "RNN")
+see_epoch(model_transformer, train_perplexity_transformer, valid_perplexity_transformer, "transformer")
+see_epoch(model_LSTM, train_perplexity_LSTM, valid_perplexity_LSTM, "LSTM")
 

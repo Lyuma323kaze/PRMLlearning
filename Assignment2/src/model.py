@@ -96,10 +96,14 @@ class LMModel_LSTM(nn.Module):
         super(LMModel_LSTM, self).__init__()
         self.drop = nn.Dropout(dropout)
         self.encoder = nn.Embedding(nvoc, dim)
-        self.cellScale = hidden_size
+
         ########################################
         # Construct your LSTM model here.
-        # the matrices right multiply for exerting
+        # all the matrices right multiply for usage
+
+        # structure of the network
+        self.cellScale = hidden_size
+        self.numlayers = num_layers
         # forget gate
         self.wf = nn.Linear(hidden_size, self.cellScale, bias = True)
         self.uf = nn.Linear(dim, self.cellScale)
@@ -125,14 +129,50 @@ class LMModel_LSTM(nn.Module):
     def forward(self, input, hidden=None):
         # input shape: (seq_len, batch_size)
         embeddings = self.drop(self.encoder(input))  # (seq_len, batch, dim)
-
+        seq_len = embeddings.size(0)
+        batch_size = embeddings.size(1)
         # With embeddings, you can get your output here.
-        # Output has the dimension of sequence_length * batch_size * number of classes
         ########################################
         # TODO: use your defined LSTM network
         # initialize cell and hidden
+        if hidden is None:
+            h_tot = torch.zeros(self.numlayers, batch_size, self.hidden_size, device=input.device)
+            c_tot = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
+            hidden = (h_tot, c_tot)
+        else:
+            h_tot, c_tot = hidden
+
+        # loop
+        output = []
+        for t in range(seq_len):
+            x_t = embeddings[t, :, :]
+            for layer in range(self.numlayers):
+                if layer != 0:
+                    h_prev = h_tot[layer]
+                    c_prev = c_tot[layer]
+                else:
+                    h_prev = torch.zeros_like(h_tot[layer], device=input.device)
+                    c_prev = torch.zeros_like(c_tot[layer], device=input.device)
+
+                # forget gate
+                f_t = torch.sigmoid(self.wf(h_prev) + self.uf(x_t))
+                # input gate
+                i_t = torch.sigmoid(self.wi(h_prev) + self.ui(x_t))
+                # new cell content
+                c_ncont = torch.tanh(self.wc(h_prev) + self.uc(x_t))
+                # update cell
+                c_tot[layer] = f_t * c_prev + i_t * c_ncont
+                # output gate
+                o_t = torch.sigmoid(self.wo(h_prev) + self.uo(x_t))
+                # update hidden
+                h_tot[layer] = o_t * torch.tanh(c_tot[layer])
+                x_t = h_tot[layer]  # update x
+
+
         ########################################
 
+        # Output has the dimension of
+        # sequence_length * batch_size * number of classes
         output = self.drop(output)
         decoded = self.decoder(output.view(-1, output.size(2)))
         return decoded.view(output.size(0), output.size(1), decoded.size(-1)), hidden

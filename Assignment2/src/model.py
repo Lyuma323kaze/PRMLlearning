@@ -20,6 +20,15 @@ class LMModel_transformer(nn.Module):
         # WRITE CODE HERE witnin two '#' bar
         ########################################
         # Construct you Transformer model here. You can add additional parameters to the function.
+        self.pos_encoder = nn.Parameter(torch.randn(1024, 1, dim) * 0.02)   # first parameter is permitted max_sql
+        encoder_layer = nn.TransformerEncoderLayer(d_model=dim,             # IO dimension
+                                                    nhead=nhead,
+                                                    dim_feedforward=4 * dim,  # 前馈网络隐藏层维度
+                                                    dropout=0.5,
+                                                    activation='gelu',
+                                                    batch_first=False)
+        self.transformer = nn.TransformerEncoder(encoder_layer=encoder_layer,
+                                                    num_layers=num_layers)
 
         ########################################
 
@@ -169,13 +178,13 @@ class LMModel_LSTM(nn.Module):
             hidden = (h_tot, c_tot)
         else:
             h_tot, c_tot = hidden
-            h_tot = h_tot.clone().detach()
-            c_tot = c_tot.clone().detach()
+        h_tot = h_tot.detach()
+        c_tot = c_tot.detach()
         # loop
         # output = torch.zeros(seq_len, batch_size, self.hidden_size, device=input.device)
         output_ = []
         for t in range(seq_len):
-            x_t = embeddings[t, :, :]
+            x_t = embeddings[t]
             # cloning
             new_h_tot = h_tot.clone()
             new_c_tot = c_tot.clone()

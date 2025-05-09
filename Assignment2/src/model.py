@@ -62,7 +62,10 @@ class LMModel_RNN(nn.Module):
         self.encoder = nn.Embedding(nvoc, dim)
         ########################################
         # Construct your RNN model here.
-
+        self.rnn = nn.RNN(input_size=dim,
+                        hidden_size=hidden_size,
+                        num_layers=num_layers,
+                        batch_first=False)
         ########################################
         self.decoder = nn.Linear(hidden_size, nvoc)
         self.init_weights()
@@ -72,6 +75,11 @@ class LMModel_RNN(nn.Module):
         self.encoder.weight.data.uniform_(-init_uniform, init_uniform)
         self.decoder.bias.data.zero_()
         self.decoder.weight.data.uniform_(-init_uniform, init_uniform)
+        for name, param in self.rnn.named_parameters():
+            if 'weight' in name:
+                nn.init.uniform_(param.data, -init_uniform, init_uniform)
+            elif 'bias' in name:
+                nn.init.constant_(param.data, 0)
 
     def forward(self, input, hidden=None):
         # input shape: (seq_len, batch_size)

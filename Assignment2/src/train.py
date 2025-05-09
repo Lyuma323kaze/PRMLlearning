@@ -91,7 +91,7 @@ def evaluate(model_):
             data_, target, end_flag = data_loader.get_batch()
             data_ = data_.to(device)
             target = target.to(device)
-            decode = model_(data_)
+            decode = model_(data_)[0]
 
             # Calculate cross-entropy loss
             loss = criterion(decode.view(decode.size(0) * decode.size(1), -1), target)

@@ -103,6 +103,7 @@ def evaluate(model_):
 
 # Train Function
 def train(model_, optimizer_):
+    torch.autograd.set_detect_anomaly(True)
     data_loader.set_train()
     data_, target, end_flag = data_loader.get_batch()
     model_.train()

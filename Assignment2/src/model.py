@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import os
 
+
 # os.environ["TORCH_USE_CUDA_DSA"] = "1"
 # os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
@@ -150,59 +151,50 @@ class LMModel_LSTM(nn.Module):
         # TODO: use your defined LSTM network
         # initialize cell and hidden
         if hidden is None:
-            # 1-based layers, with layer==0 the initial
             h_tot = torch.zeros(self.numlayers, batch_size, self.hidden_size, device=input.device)
             c_tot = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             hidden = (h_tot, c_tot)
         else:
             h_tot, c_tot = hidden
+            h_tot = h_tot.clone().detach()
+            c_tot = c_tot.clone().detach()
         # loop
-        output = torch.zeros(seq_len, batch_size, self.hidden_size, device=input.device)
+        # output = torch.zeros(seq_len, batch_size, self.hidden_size, device=input.device)
+        output_ = []
         for t in range(seq_len):
-            f_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
-            i_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
-            o_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
-            c_ncont = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             x_t = embeddings[t, :, :]
             # cloning
             new_h_tot = h_tot.clone()
             new_c_tot = c_tot.clone()
-            new_f_t = f_t.clone()
-            new_i_t = i_t.clone()
-            new_o_t = o_t.clone()
-            new_c_ncont = c_ncont.clone()
             for layer in range(self.numlayers):
                 # h and c of last step
                 h_prev = h_tot[layer]
                 c_prev = c_tot[layer]
-
                 # forget gate
-                new_f_t[layer] = torch.sigmoid(h_prev.matmul(self.wf) + x_t.matmul(self.uf) + self.bf)
+                f_t_layer = torch.sigmoid(h_prev.matmul(self.wf) + x_t.matmul(self.uf) + self.bf)
                 # input gate
-                new_i_t[layer] = torch.sigmoid(h_prev.matmul(self.wi) + x_t.matmul(self.ui) + self.bi)
+                i_t_layer = torch.sigmoid(h_prev.matmul(self.wi) + x_t.matmul(self.ui) + self.bi)
                 # output gate
-                new_o_t[layer] = torch.sigmoid(h_prev.matmul(self.wo) + x_t.matmul(self.uo) + self.bo)
+                o_t_layer = torch.sigmoid(h_prev.matmul(self.wo) + x_t.matmul(self.uo) + self.bo)
                 # new cell content
-                new_c_ncont[layer] = torch.tanh(h_prev.matmul(self.wc) + x_t.matmul(self.uc) + self.bc)
+                c_ncont_layer = torch.tanh(h_prev.matmul(self.wc) + x_t.matmul(self.uc) + self.bc)
                 # update cell
-                new_c_tot[layer] = new_f_t[layer] * c_prev + new_i_t[layer] * new_c_ncont[layer]
+                new_c_layer = f_t_layer * c_prev + i_t_layer * c_ncont_layer
                 # update hidden
-                new_h_tot[layer] = new_o_t[layer] * torch.tanh(new_c_tot[layer])
+                new_h_layer = o_t_layer * torch.tanh(new_c_layer)
                 # to next layer
-                x_t = h_tot[layer]
-                # update f_t, i_t, o_t, c_ncont
-                f_t = new_f_t
-                i_t = new_i_t
-                o_t = new_o_t
-                c_ncont = new_c_ncont
+                new_c_tot = torch.cat([new_c_tot[:layer], new_c_layer.unsqueeze(0), new_c_tot[layer + 1:]])
+                new_h_tot = torch.cat([new_h_tot[:layer], new_h_layer.unsqueeze(0), new_h_tot[layer + 1:]])
+                x_t = new_h_tot[layer]
             h_tot = new_h_tot
             c_tot = new_c_tot
-            output[t] = h_tot[-1]
+            output_.append(h_tot[-1])
 
 
         ########################################
         # Output has the dimension of
         # sequence_length * batch_size * number of classes
-        output = self.drop(output)
-        decoded = self.decoder(output.view(-1, output.size(2)))
-        return decoded.view(output.size(0), output.size(1), decoded.size(-1)), hidden
+        output_ = torch.stack(output_)
+        output_ = self.drop(output_)
+        decoded = self.decoder(output_.view(-1, output_.size(2)))
+        return decoded.view(output_.size(0), output_.size(1), decoded.size(-1)), hidden

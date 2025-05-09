@@ -11,6 +11,11 @@ import model
 import os
 import os.path as osp
 
+'''
+ATTENTION!
+working file: ./src
+'''
+
 # os.environ["TORCH_USE_CUDA_DSA"] = "1"
 # os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 

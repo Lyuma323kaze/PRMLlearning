@@ -156,7 +156,6 @@ class LMModel_LSTM(nn.Module):
             hidden = (h_tot, c_tot)
         else:
             h_tot, c_tot = hidden
-
         # loop
         output = torch.zeros(seq_len, batch_size, self.hidden_size, device=input.device)
         for t in range(seq_len):
@@ -165,26 +164,37 @@ class LMModel_LSTM(nn.Module):
             o_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             c_ncont = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             x_t = embeddings[t, :, :]
+            # cloning
+            new_h_tot = h_tot.clone()
+            new_c_tot = c_tot.clone()
+            new_f_t = f_t.clone()
+            new_i_t = i_t.clone()
+            new_o_t = o_t.clone()
+            new_c_ncont = c_ncont.clone()
             for layer in range(self.numlayers):
                 # h and c of last step
                 h_prev = h_tot[layer]
                 c_prev = c_tot[layer]
 
                 # forget gate
-                f_t[layer] = torch.sigmoid(h_prev.matmul(self.wf) + x_t.matmul(self.uf) + self.bf)
+                new_f_t[layer] = torch.sigmoid(h_prev.matmul(self.wf) + x_t.matmul(self.uf) + self.bf)
                 # input gate
-                i_t[layer] = torch.sigmoid(h_prev.matmul(self.wi) + x_t.matmul(self.ui) + self.bi)
+                new_i_t[layer] = torch.sigmoid(h_prev.matmul(self.wi) + x_t.matmul(self.ui) + self.bi)
                 # output gate
-                o_t[layer] = torch.sigmoid(h_prev.matmul(self.wo) + x_t.matmul(self.uo) + self.bo)
+                new_o_t[layer] = torch.sigmoid(h_prev.matmul(self.wo) + x_t.matmul(self.uo) + self.bo)
                 # new cell content
-                c_ncont[layer] = torch.tanh(h_prev.matmul(self.wc) + x_t.matmul(self.uc) + self.bc)
+                new_c_ncont[layer] = torch.tanh(h_prev.matmul(self.wc) + x_t.matmul(self.uc) + self.bc)
                 # update cell
                 new_c_tot[layer] = new_f_t[layer] * c_prev + new_i_t[layer] * new_c_ncont[layer]
                 # update hidden
                 new_h_tot[layer] = new_o_t[layer] * torch.tanh(new_c_tot[layer])
                 # to next layer
                 x_t = h_tot[layer]
-                
+                # update f_t, i_t, o_t, c_ncont
+                f_t = new_f_t
+                i_t = new_i_t
+                o_t = new_o_t
+                c_ncont = new_c_ncont
             h_tot = new_h_tot
             c_tot = new_c_tot
             output[t] = h_tot[-1]

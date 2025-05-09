@@ -135,6 +135,10 @@ class LMModel_LSTM(nn.Module):
         self.encoder.weight.data.uniform_(-init_uniform, init_uniform)
         self.decoder.bias.data.zero_()
         self.decoder.weight.data.uniform_(-init_uniform, init_uniform)
+        for param in [self.wf, self.uf, self.wi, self.ui, self.wc, self.uc, self.wo, self.uo]:
+            param.data.uniform_(-init_uniform, init_uniform)
+        for bias in [self.bf, self.bi, self.bc, self.bo]:
+            bias.data.zero_()
 
     def forward(self, input, hidden=None):
         # input shape: (seq_len, batch_size)
@@ -154,12 +158,13 @@ class LMModel_LSTM(nn.Module):
             h_tot, c_tot = hidden
 
         # loop
-        x_t = embeddings[0, :, :]
+        output = torch.zeros(seq_len, batch_size, self.hidden_size, device=input.device)
         for t in range(seq_len):
             f_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             i_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             o_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             c_ncont = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
+            x_t = embeddings[t, :, :]
             for layer in range(self.numlayers):
                 # h and c of last step
                 h_prev = h_tot[layer]
@@ -174,15 +179,15 @@ class LMModel_LSTM(nn.Module):
                 # new cell content
                 c_ncont[layer] = torch.tanh(h_prev.matmul(self.wc) + x_t.matmul(self.uc) + self.bc)
                 # update cell
-                c_tot[layer] = f_t * c_prev + i_t * c_ncont
+                c_tot[layer] = f_t[layer] * c_prev + i_t[layer] * c_ncont
                 # update hidden
-                h_tot[layer] = o_t * torch.tanh(c_tot[layer])
+                h_tot[layer] = o_t[layer] * torch.tanh(c_tot[layer])
                 # to next layer
                 x_t = h_tot[layer]
+            output[t] = h_tot[-1]
 
 
         ########################################
-        output = self.decoder(h_tot)
         # Output has the dimension of
         # sequence_length * batch_size * number of classes
         output = self.drop(output)

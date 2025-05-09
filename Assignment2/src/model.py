@@ -184,6 +184,9 @@ class LMModel_LSTM(nn.Module):
                 new_h_tot[layer] = new_o_t[layer] * torch.tanh(new_c_tot[layer])
                 # to next layer
                 x_t = h_tot[layer]
+                
+            h_tot = new_h_tot
+            c_tot = new_c_tot
             output[t] = h_tot[-1]
 
 

@@ -43,7 +43,12 @@ class LMModel_transformer(nn.Module):
         L = embeddings.size(0)
         src_mask = torch.triu(torch.ones(L, L) * float('-inf'), diagonal=1).to(input.device.type)
         src = embeddings * math.sqrt(self.dim)
-        output, hidden = self.transformer(src, embeddings, src_mask)
+        # position encoding
+        # dynamic position encoding length
+
+        output= self.transformer(src=src,
+                                    mask=src_mask,
+                                    src_key_padding_mask=None)
         ########################################
         output = self.drop(output)
         decoded = self.decoder(output.view(output.size(0)*output.size(1), output.size(2)))

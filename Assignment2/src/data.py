@@ -1,8 +1,8 @@
 import os
 import torch
 
-os.environ["TORCH_USE_CUDA_DSA"] = "1"
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+# os.environ["TORCH_USE_CUDA_DSA"] = "1"
+# os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 class Corpus(object):
     def __init__(self, path, batch_size, max_sql):
@@ -23,7 +23,7 @@ class Corpus(object):
         self.train = self.train.narrow(0, 0, self.batch_size["train"] * self.train_batch_num)
         # Truncate first blabla tokens for valid set
         self.valid = self.valid.narrow(0, 0, self.batch_size["valid"] * self.valid_batch_num)
-        # train set and valid set of shape (B, m)
+        # train set and valid set of shape (m, B)
         self.train = self.train.view(self.batch_size["train"], -1).t().contiguous()
         self.valid = self.valid.view(self.batch_size["valid"], -1).t().contiguous()
 
@@ -69,8 +69,8 @@ class Corpus(object):
             data_loader = self.valid
             self.valid_si = self.valid_si + seq_len
         # Load a truncation of word token ids
-        data = data_loader[start_index:start_index + seq_len, :]
-        target = data_loader[start_index + 1:start_index + seq_len + 1, :].view(-1)
+        data = data_loader[start_index:start_index + seq_len]
+        target = data_loader[start_index + 1:start_index + seq_len + 1].view(-1)
 
         ## end_flag indicates whether a epoch (train or valid epoch) has been ended
         if self.dset_flag == "train" and self.train_si + 1 == self.train.size(0):

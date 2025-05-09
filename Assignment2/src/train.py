@@ -5,15 +5,14 @@ import math
 import torch
 import torch.optim as optim
 import torch.nn as nn
-from torch import export
 
 import data
 import model
 import os
 import os.path as osp
 
-os.environ["TORCH_USE_CUDA_DSA"] = "1"
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+# os.environ["TORCH_USE_CUDA_DSA"] = "1"
+# os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 
 parser = argparse.ArgumentParser(description='PyTorch ptb Language Model')
@@ -54,6 +53,8 @@ eval_batch_size = args.eval_batch_size
 batch_size = {'train': train_batch_size,'valid':eval_batch_size}
 data_loader = data.Corpus("../data/ptb", batch_size, args.max_sql)
 
+
+
 ########################################
 # Build LMModel model (build your language model here)
 # transformer
@@ -67,7 +68,7 @@ model_RNN = model.LMModel_RNN(nvoc = len(data_loader.vocabulary), dim = args.emb
 model_RNN = model_RNN.to(device)
 optimizer_RNN = optim.Adam(model_RNN.parameters(), lr=1e-3)
 # LSTM
-model_LSTM = model.LMModel_LSTM(nvoc = args.emb_dim, dim = args.emb_dim,
+model_LSTM = model.LMModel_LSTM(nvoc = len(data_loader.vocabulary), dim = args.emb_dim,
                               num_layers = args.num_layers)
 model_LSTM = model_LSTM.to(device)
 optimizer_LSTM = optim.Adam(model_LSTM.parameters(), lr=1e-3)
@@ -80,17 +81,17 @@ criterion = nn.CrossEntropyLoss()
 
 def evaluate(model_):
     data_loader.set_valid()
-    data, target, end_flag = data_loader.get_batch()
+    data_, target, end_flag = data_loader.get_batch()
     model_.eval()
     idx = 0
     avg_loss = 0
     print(f"Validating")
     while not end_flag:
         with torch.no_grad():
-            data, target, end_flag = data_loader.get_batch()
-            data = data.to(device)
+            data_, target, end_flag = data_loader.get_batch()
+            data_ = data_.to(device)
             target = target.to(device)
-            decode = model_(data)
+            decode = model_(data_)
 
             # Calculate cross-entropy loss
             loss = criterion(decode.view(decode.size(0) * decode.size(1), -1), target)
@@ -101,23 +102,22 @@ def evaluate(model_):
 
 
 # Train Function
-def train(model_):
+def train(model_, optimizer_):
     data_loader.set_train()
-    data, target, end_flag = data_loader.get_batch()
+    data_, target, end_flag = data_loader.get_batch()
     model_.train()
     idx = 0
     avg_loss = 0
     while not end_flag:
-        data, target, end_flag = data_loader.get_batch()
-        data = data.to(device)
+        data_, target, end_flag = data_loader.get_batch()
+        data_ = data_.to(device)
         target = target.to(device)
-        decode = model_(data)
-
+        decode = model_(data_)
         # Calculate cross-entropy loss
-        optimizer_transformer.zero_grad()
+        optimizer_.zero_grad()
         loss = criterion(decode.view(decode.size(0)*decode.size(1), -1), target)
         loss.backward()
-        optimizer_transformer.step()
+        optimizer_.step()
         if (idx+1) % 50 == 0:
             print(f"The loss is {loss}")
         idx += 1
@@ -133,16 +133,16 @@ valid_perplexity_RNN = []
 train_perplexity_LSTM = []
 valid_perplexity_LSTM = []
 
-def see_epoch(model_, train_ls, valid_ls, name:str = None):
+def see_epoch(model_, train_ls, valid_ls, name:str = None, optimizer_ = None):
     for epoch in range(1, args.epochs + 1):
         print(f"Start training epoch ({name}) {epoch}")
-        train_perplexity_transformer.append(train(model_))
+        train_perplexity_transformer.append(train(model_, optimizer_))
         valid_perplexity_transformer.append(evaluate(model_))
     print(f"Train Perplexity {name} {train_ls}")
     print(f"Valid Perplexity {name} {valid_ls}")
 
 
-# see_epoch(model_RNN, train_perplexity_RNN, valid_perplexity_RNN, "RNN")
-# see_epoch(model_transformer, train_perplexity_transformer, valid_perplexity_transformer, "transformer")
-see_epoch(model_LSTM, train_perplexity_LSTM, valid_perplexity_LSTM, "LSTM")
+# see_epoch(model_RNN, train_perplexity_RNN, valid_perplexity_RNN, "RNN", optimizer_RNN)
+# see_epoch(model_transformer, train_perplexity_transformer, valid_perplexity_transformer, "transformer", optimizer_transformer)
+see_epoch(model_LSTM, train_perplexity_LSTM, valid_perplexity_LSTM, "LSTM", optimizer_LSTM)
 

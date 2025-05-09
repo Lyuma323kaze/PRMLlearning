@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import os
 
-os.environ["TORCH_USE_CUDA_DSA"] = "1"
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+# os.environ["TORCH_USE_CUDA_DSA"] = "1"
+# os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 class LMModel_transformer(nn.Module):
     # Language model is composed of three parts: a word embedding layer, a rnn network and a output layer.
@@ -100,7 +100,7 @@ class LMModel_LSTM(nn.Module):
         super(LMModel_LSTM, self).__init__()
         self.drop = nn.Dropout(dropout)
         self.encoder = nn.Embedding(nvoc, dim)
-
+        self.nvoc = nvoc
         ########################################
         # Construct your LSTM model here.
         # all the matrices right multiply for usage

@@ -52,7 +52,7 @@ class LMModel_transformer(nn.Module):
         ########################################
         output = self.drop(output)
         decoded = self.decoder(output.view(output.size(0)*output.size(1), output.size(2)))
-        return decoded.view(output.size(0), output.size(1), decoded.size(1))
+        return decoded.view(output.size(0), output.size(1), decoded.size(1)), None
 
 class LMModel_RNN(nn.Module):
     """

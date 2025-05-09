@@ -181,7 +181,7 @@ class LMModel_LSTM(nn.Module):
                 # update cell
                 new_c_tot[layer] = new_f_t[layer] * c_prev + new_i_t[layer] * new_c_ncont[layer]
                 # update hidden
-                h_tot[layer] = o_t[layer] * torch.tanh(c_tot[layer])
+                new_h_tot[layer] = new_o_t[layer] * torch.tanh(new_c_tot[layer])
                 # to next layer
                 x_t = h_tot[layer]
             output[t] = h_tot[-1]

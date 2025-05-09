@@ -111,17 +111,21 @@ class LMModel_LSTM(nn.Module):
         self.numlayers = num_layers
         # gates
         # forget gate
-        self.wf = nn.Linear(hidden_size, self.cellScale, bias = True)
-        self.uf = nn.Linear(dim, self.cellScale)
+        self.wf = nn.Parameter(torch.zeros(hidden_size, self.cellScale))
+        self.uf = nn.Parameter(torch.zeros(dim, self.cellScale))
+        self.bf = nn.Parameter(torch.zeros(self.cellScale))
         # input gate
-        self.wi = nn.Linear(dim, self.cellScale, bias = True)
-        self.ui = nn.Linear(dim, self.cellScale)
+        self.wi = nn.Parameter(torch.zeros(hidden_size, self.cellScale))
+        self.ui = nn.Parameter(torch.zeros(dim, self.cellScale))
+        self.bi = nn.Parameter(torch.zeros(self.cellScale))
         # new cell content
-        self.wc = nn.Linear(dim, self.cellScale, bias = True)
-        self.uc = nn.Linear(dim, self.cellScale)
+        self.wc = nn.Parameter(torch.zeros(hidden_size, self.cellScale))
+        self.uc = nn.Parameter(torch.zeros(dim, self.cellScale))
+        self.bc = nn.Parameter(torch.zeros(self.cellScale))
         # output gate
-        self.wo = nn.Linear(self.cellScale, hidden_size, bias = True)
-        self.uo = nn.Linear(self.cellScale, hidden_size)
+        self.wo = nn.Parameter(torch.zeros(hidden_size, self.cellScale))
+        self.uo = nn.Parameter(torch.zeros(dim, self.cellScale))
+        self.bo = nn.Parameter(torch.zeros(self.cellScale))
         ########################################
         self.decoder = nn.Linear(hidden_size, nvoc)
         self.init_weights()
@@ -150,8 +154,8 @@ class LMModel_LSTM(nn.Module):
             h_tot, c_tot = hidden
 
         # loop
+        x_t = embeddings[0, :, :]
         for t in range(seq_len):
-            x_t = embeddings[t, :, :]
             f_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             i_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
             o_t = torch.zeros(self.numlayers, batch_size, self.cellScale, device=input.device)
@@ -162,13 +166,13 @@ class LMModel_LSTM(nn.Module):
                 c_prev = c_tot[layer]
 
                 # forget gate
-                f_t[layer] = torch.sigmoid(self.wf(h_prev) + self.uf(x_t))
+                f_t[layer] = torch.sigmoid(h_prev.matmul(self.wf) + x_t.matmul(self.uf) + self.bf)
                 # input gate
-                i_t[layer] = torch.sigmoid(self.wi(h_prev) + self.ui(x_t))
+                i_t[layer] = torch.sigmoid(h_prev.matmul(self.wi) + x_t.matmul(self.ui) + self.bi)
                 # output gate
-                o_t[layer] = torch.sigmoid(self.wo(h_prev) + self.uo(x_t))
+                o_t[layer] = torch.sigmoid(h_prev.matmul(self.wo) + x_t.matmul(self.uo) + self.bo)
                 # new cell content
-                c_ncont[layer] = torch.tanh(self.wc(h_prev) + self.uc(x_t))
+                c_ncont[layer] = torch.tanh(h_prev.matmul(self.wc) + x_t.matmul(self.uc) + self.bc)
                 # update cell
                 c_tot[layer] = f_t * c_prev + i_t * c_ncont
                 # update hidden
